@@ -4,11 +4,12 @@ import json
 
 from mqtt_hub import MQTThub
 from sensor_factory import SensorFactory
+from switch_factory import SwitchFactory
 
 mqtt_settings = {
-    'broker_addr'   : '',
-    'broker_usrname': '',
-    'broker_psswrd' : '',
+    'broker_addr'   : '192.168.0.200',
+    'broker_usrname': 'henrik',
+    'broker_psswrd' : 'ag1pno3m',
     'client_id'     : hexlify(machine.unique_id()),
     'base_topic'    : 'home/kitchen/ESP32_01',
     'topic_set'     : 'settings',   # topic to which settings are published
@@ -16,6 +17,10 @@ mqtt_settings = {
     'msg_interval'  : 60 }          # publishing frequency - can be updated
                                     # by sending {'msg_interval':0} to tupic
                                     # base_topic/topic_sub
+
+switch_settings = {
+    'display' : {'clk_pin' : 2, 'dio_pin' : 0, 'brightness' : 5}
+}
 
 # function receiving messages from subscribed topic (base_topic/topic_sub)
 def sub_cb(topic, msg):
@@ -37,5 +42,5 @@ mqtt_hub.add_node(sf)
 
 # loop can be terminated by sending {'msg_interval':0} message to
 # topic based_topic/topic_sub (see mqtt_settings above)
-while mqtt_settings['msg_interval'] != 0:
-    mqtt_hub.loop()
+#while mqtt_settings['msg_interval'] != 0:
+#    mqtt_hub.loop()
