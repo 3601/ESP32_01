@@ -16,7 +16,7 @@ def connect(ssid, password):
 
 # connect to Wifi
 no_debug()
-connect('CableBox-2715', 'udm2qgmhtn')
+connect('', '')
 
 # establish I2C connection
 from machine import Pin, I2C
