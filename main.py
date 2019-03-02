@@ -3,6 +3,7 @@ import machine
 import json
 from mqtt_service import MQTTService
 from sensor_factory import SensorFactory
+import nodes
 
 import schedule
 from tm1637_display import TM1637Display
