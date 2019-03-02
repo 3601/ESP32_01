@@ -1,3 +1,8 @@
+# load configuration on the microprocessor
+import json
+with open('config.json', 'r') as f:
+    config = json.loads(f.read())
+
 # functions to establish Wifi connection
 def no_debug():
     import esp
@@ -16,7 +21,15 @@ def connect(ssid, password):
 
 # connect to Wifi
 no_debug()
-connect('', '')
+connect(config['wifi']['ssid'], config['wifi']['psswrd'])
+
+# synchronize board time using NTP (UTC) and store current time in string
+from ntptime import settime
+import time
+settime()
+tm = time.localtime()
+start_time = '{0}-{1:02d}-{2:02d} {3:02d}:{4:02d}:{5:02d}'.format(tm[0], tm[1],
+    tm[2], tm[3] + 1, tm[4], tm[5])
 
 # establish I2C connection
 from machine import Pin, I2C
