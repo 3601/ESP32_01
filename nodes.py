@@ -1,36 +1,39 @@
-from sensors import HTU21D_i2c, SGP30_i2c, BMP180_i2c, TSL2561_i2c
-
 class Nodes:
     """
-    nodes can be accessed
-    1) in iterable fashion: 'sensor_name, sensor_value in SensorFactory'
-    2) using in index: 'SensorFactory[sensor_name]'
-    3) by calling relevant function 'SensorFactory.sensor_name()'
+    Nomenclature
+    sensor_id       : e.g. 'BMP180'
+    sensor_property : e.g. 'temperature'
+    sensor_func     : function e.g. 'temperature', which when called as
+                      e.g. 'temperature()' returns readout
+
+    Addition of nodes:
+    Can be added in the form of a Sensor object, e.g
+    Nodes.add(BMP180_i2c(i2c)) or
+    Nodes.add(BMP180_i2c(i2c)).add(SGP30_i2c(i2c))
+
+    Accessing sensor values and sensor objects:
+    1) direct iteration on Nodes object, which returns 'sensor_property' and
+    'sensor_func' as tuple
+    2) using index: 'Nodes[sensor_id]' (returns corresponding object) or
+    'Nodes[sensor_property]' (returns sensor_func) e.g. Nodes['BMP180'] or
+    Nodes['temperature']
+    3) by calling relevant function using attribute style, i.e 'Nodes.sensor_id'
+    or 'Nodes.sensor_property()', e.g. Nodes.BMP180 or Nodes.temperature()
     """
 
-    def detect_nodes(self):
-        print('I2C devices: ')
-        for key in self.nodes['sensors']:
-            print('{0:<8} connected: {1}'.format(self.nodes['sensors'][key].connected()))
+    def __init__(self):
+        self.nodes = {'sensors' : {}, 'sensor' : {}}
 
-    def __init__(self, i2c, verbose = True):
-        self.i2c = i2c
+    def add(self, node):
+        if 'sensor' in node.info:
+            self.nodes['sensors'][node.info['sensor']] = node
+            self.nodes['sensor'].update(node.info['readout'])
+        return self
 
-        self.nodes = {}
-        self.nodes['sensors']['HTU21D']  = HTU21D_i2c(self.i2c)
-        self.nodes['sensors']['SGP30']   = SGP30_i2c(self.i2c)
-        self.nodes['sensors']['BMP180']  = BMP180_i2c(self.i2c)
-        self.nodes['sensors']['TSL2561'] = TSL2561_i2c(self.i2c)
-
-        self.nodes['sensor']['temperature'] = self.nodes['sensors']['HTU21D'].temperature
-        self.nodes['sensor']['humidity']    = self.nodes['sensors']['HTU21D'].humidity
-        self.nodes['sensor']['co2eq']       = self.nodes['sensors']['SGP30'].co2eq
-        self.nodes['sensor']['tvoc']        = self.nodes['sensors']['SGP30'].tvoc
-        self.nodes['sensor']['pressure']    = self.nodes['sensors']['BMP180'].pressure
-        self.nodes['sensor']['luminosity']  = self.nodes['sensors']['TSL2561'].luminosity
-
-        if verbose:
-            self.detect_nodes()
+    @property
+    def connected(self):
+        return {key : self.nodes['sensors'][key].connected for
+                key in self.nodes['sensors']}
 
     def __iter__(self):
         self.sensor_keys = list(self.nodes['sensor'].keys())
@@ -39,9 +42,17 @@ class Nodes:
     def __next__(self):
         if len(self.sensor_keys) >= 1:
             tmp_key = self.sensor_keys.pop()
-            return tmp_key, self.nodes['sensor'][tmp_key]()
+            return tmp_key, self.nodes['sensor'][tmp_key]
         else:
             raise StopIteration
 
     def __getitem__(self, key):
-        return self.nodes['sensor'][key]()
+        if key in self.nodes['sensors']:
+            return self.nodes['sensors'][key]
+        elif key in self.nodes['sensor']:
+            return self.nodes['sensor'][key]
+        else:
+            return None
+
+    def __getattr__(self, key):
+        return self.__getitem__(key)

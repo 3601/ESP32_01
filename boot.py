@@ -25,13 +25,30 @@ connect(config['wifi']['ssid'], config['wifi']['psswrd'])
 
 # synchronize board time using NTP (UTC) and store current time in string
 from ntptime import settime
-import time
+import utils
 settime()
-tm = time.localtime()
-start_time = '{0}-{1:02d}-{2:02d} {3:02d}:{4:02d}:{5:02d}'.format(tm[0], tm[1],
-    tm[2], tm[3] + 1, tm[4], tm[5])
+#tm = time.localtime()
+tm = utils.cettime()
+start_time = '{0}-{1:02d}-{2:02d} {3:02d}:{4:02d}:{5:02d}'.format(*tm[:6])
 
 # establish I2C connection
 from machine import Pin, I2C
 i2c = I2C(sda = Pin(21), scl = Pin(22))
 # print('I2C devices on:', ', '.join([hex(i) for i in i2c.scan()]))
+
+def connected_i2c_devices(i2c):
+    # print connected i2c devices
+    i2c_addr = { '0x40' : 'HTU21D (0x40)',
+                 '0x58' : 'SGP30 (0x58)',
+                 '0x77' : 'BMP180 (0x77)',
+                 '0x39' : 'TSL2561 (0x39)' }
+
+    print('I2C devices: ', end = '')
+    for dev in i2c.scan():
+        try:
+            print(i2c_addr[hex(dev)], end = ', ')
+        except:
+            print('unknown ({0})'.format(hex(dev)), end = ', ')
+    print()
+
+connected_i2c_devices(i2c)

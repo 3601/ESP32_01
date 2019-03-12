@@ -1,11 +1,12 @@
-from ubinascii import hexlify
 import machine
 import json
+from ubinascii import hexlify
+from sensors import HTU21D_i2c, SGP30_i2c, BMP180_i2c, TSL2561_i2c
+from nodes import Nodes
 from mqtt_service import MQTTService
-from sensor_factory import SensorFactory
-import nodes
+from scheduler import Schedule
 
-import schedule
+#import schedule
 from tm1637_display import TM1637Display
 
 mqtt_settings = {
@@ -27,18 +28,15 @@ def sub_cb(topic, msg):
         print('error converting incoming msg:', msg)
     mqtt.publish_settings()
 
-# instantiation of SensorFactory
-sf = SensorFactory(i2c)
+# instantiation of Nodes
+nodes = Nodes()
+nodes.add(HTU21D_i2c(i2c)).add(BMP180_i2c(i2c))
+nodes.add(SGP30_i2c(i2c)).add(TSL2561_i2c(i2c))
 
 # instantiation of MQTThub and addition of nodes via iterable sf object
 mqtt = MQTTService(config['mqtt'], mqtt_settings, sub_cb)
 
 tmdisp = TM1637Display()
-
-
-schedule.every(6).seconds.do(tmdisp.show, output = sf.humidity)
-schedule.every(4).seconds.do(tmdisp.show, output = sf.co2eq)
-
 
 #while True:
 #    mqtt.loop()

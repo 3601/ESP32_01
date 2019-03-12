@@ -1,18 +1,18 @@
 import machine
-import time
+import utime
+import utils
 import json
 from umqtt.simple import MQTTClient
 
 class MQTTService:
     """
-    publish_messages() takes any number of arguments. They should all be
+    publish_messages():
+    takes any number of arguments. Should be tuple or
     iterable and return tuple containing topic (to publish) and payload pair.
-    The payload can be a dict or be a type than can be converted to a
+    The payload can be a function, dict or a type than can be converted to a
     string using str()
     """
     def __init__(self, cfg_set, mqtt_set, sub_cb = False):
-        self.last_msg      = 0
-        self.start_time    = time.time()
         self.mqtt_set      = mqtt_set
         self.sub_cb        = sub_cb
         try:
@@ -35,6 +35,8 @@ class MQTTService:
             if hasattr(message, '__iter__'):
                 for topic, payload in message:
                     topic_pub = '{0}/{1}'.format(self.mqtt_set['base_topic'], topic)
+                    if callable(payload):
+                        payload = payload()
                     if isinstance(payload, dict):
                         self._publish(topic_pub, json.dumps(payload))
                     else:
@@ -42,16 +44,17 @@ class MQTTService:
             elif isinstance(message, (tuple,list)):
                 topic, payload = message
                 topic_pub = '{0}/{1}'.format(self.mqtt_set['base_topic'], topic)
+                if callable(payload):
+                    payload = payload()
                 if isinstance(payload, dict):
                     self._publish(topic_pub, json.dumps(payload))
                 else:
                     self._publish(topic_pub, str(payload))
 
     def publish_settings(self):
-        tm = time.localtime()
+        tm = utils.cettime()
         self.mqtt_set['pub_time'] = (
-            '{0}-{1:02d}-{2:02d} {3:02d}:{4:02d}:{5:02d}'.format(tm[0], tm[1],
-            tm[2], tm[3] + 1, tm[4], tm[5]))
+            '{0}-{1:02d}-{2:02d} {3:02d}:{4:02d}:{5:02d}'.format(*tm[:6]))
         topic_pub = '{0}/{1}'.format(self.mqtt_set['base_topic'],
                                      self.mqtt_set['topic_set'])
         self._publish(topic_pub, json.dumps(self.mqtt_set))
@@ -64,7 +67,7 @@ class MQTTService:
 
     def _restart_and_connect(self):
         print('Failed to connect to MQTT broker. Reconnecting...')
-        time.sleep(10)
+        utime.sleep(10)
         machine.reset()
 
     def loop(self):
