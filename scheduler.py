@@ -45,11 +45,17 @@ class Schedule():
 
     def __next__(self):
         if len(self.job_tags) >= 1:
-            return self.job_tags.pop()
+            tmp_key = self.job_tags.pop()
+            return tmp_key, {sub_key:self.jobs[tmp_key][sub_key] for sub_key in
+                   self.jobs[tmp_key] if sub_key in ['interval', 'unit',
+                   'at_time', 'start_day', 'active']}
         else:
             raise StopIteration
 
-    def every(self, tag = None, interval = 1, unit = None, start_day = None,
+    def __contains__(self, key):
+        return key in self.jobs.keys()
+
+    def every(self, tag = None, interval = None, unit = None, start_day = None,
               at_time = None, job_func = None, *args, **kwargs):
         """Schedule a new periodic job. If tag already in dictionary,
            scheduling is updated, but original job_func kept"""
@@ -62,6 +68,9 @@ class Schedule():
                 'period'   : None,
                 'start_day': None,
                 'active'   : True }
+
+        if interval == None:
+            interval = 1
 
         if interval > 0:
             job['interval'] = int(interval)

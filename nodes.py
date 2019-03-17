@@ -56,3 +56,6 @@ class Nodes:
 
     def __getattr__(self, key):
         return self.__getitem__(key)
+
+    def __contains__(self, key):
+        return key in self.nodes['sensor']

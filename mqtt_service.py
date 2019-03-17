@@ -29,12 +29,17 @@ class MQTTService:
         except:
             self._restart_and_connect()
 
-    def publish_messages(self, *messages):
+    def publish_messages(self, msg, ext = False):
+        """ should be an iterable object of iterable object, or containing
+            tuple/list of topic/payload pairs """
         self.publish_settings()
-        for message in messages:
+        for message in msg:
             if hasattr(message, '__iter__'):
                 for topic, payload in message:
-                    topic_pub = '{0}/{1}'.format(self.mqtt_set['base_topic'], topic)
+                    if ext:
+                        topic_pub = '{0}/{1}/{2}'.format(self.mqtt_set['base_topic'], ext, topic)
+                    else:
+                        topic_pub = '{0}/{1}'.format(self.mqtt_set['base_topic'], topic)
                     if callable(payload):
                         payload = payload()
                     if isinstance(payload, dict):
@@ -43,7 +48,10 @@ class MQTTService:
                         self._publish(topic_pub, str(payload))
             elif isinstance(message, (tuple,list)):
                 topic, payload = message
-                topic_pub = '{0}/{1}'.format(self.mqtt_set['base_topic'], topic)
+                if ext:
+                    topic_pub = '{0}/{1}/{2}'.format(self.mqtt_set['base_topic'], ext, topic)
+                else:
+                    topic_pub = '{0}/{1}'.format(self.mqtt_set['base_topic'], topic)
                 if callable(payload):
                     payload = payload()
                 if isinstance(payload, dict):
@@ -55,8 +63,8 @@ class MQTTService:
         tm = utils.cettime()
         self.mqtt_set['pub_time'] = (
             '{0}-{1:02d}-{2:02d} {3:02d}:{4:02d}:{5:02d}'.format(*tm[:6]))
-        topic_pub = '{0}/{1}'.format(self.mqtt_set['base_topic'],
-                                     self.mqtt_set['topic_set'])
+        topic_pub = '{0}/{1}/{2}'.format(self.mqtt_set['base_topic'],
+                                         self.mqtt_set['topic_set'], 'base')
         self._publish(topic_pub, json.dumps(self.mqtt_set))
 
     def _publish(self, topic, payload):

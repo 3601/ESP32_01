@@ -1,22 +1,24 @@
 from tm1637 import TM1637Decimal
 from machine import Pin
+import functools
 
 class TM1637Display(TM1637Decimal):
     def __init__(self, clk_pin = 2, dio_pin = 0, brightness = 7):
         super().__init__(Pin(clk_pin), Pin(dio_pin), brightness)
+        self.show('    ')
         self.display_func = None
 
-    def add_display_func(self, func):
+    def add_display_func(self, func, *args, **kwargs):
         """
         takes as argument function(), which when called returns value
         that can be displayed when calling show() without argument
         """
-        self.display_func = func
+        self.display_func = functools.partial(func, *args, **kwargs)
 
     def brightness(self, val):
         super().brightness(val)
 
-    def show(self, output = None):
+    def show(self, output = None, *args, **kwargs):
         """
         1.
         takes as argument a dict of the form
@@ -34,10 +36,9 @@ class TM1637Display(TM1637Decimal):
                 output = self.display_func()
             except:
                 output = ' err'
-
-        if callable(output):
+        elif callable(output):
             try:
-                output = output()
+                output = output(*args, **kwargs)
             except:
                 output = ' err'
 
